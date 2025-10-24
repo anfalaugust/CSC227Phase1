@@ -44,7 +44,7 @@ public class ProcessSchedulingSimulator {
 
 	// Run both scheduling algorithms
 	priorityWithRR(Processes, Quantum);
-	fcfs(Processes);
+	FCFS(Processes);
 	}
 
 	// ===== PRIORITY WITH ROUND ROBIN =====
@@ -127,7 +127,7 @@ public class ProcessSchedulingSimulator {
 	}
 
 	// ===== FIRST-COME FIRST-SERVED =====
-	public static void fcfs(List<Process> OriginalProcesses) {
+	public static void FCFS(List<Process> OriginalProcesses) {
 	List<Process> processes = new ArrayList<>();
 	List<Process> completed = new ArrayList<>();
 
