@@ -1,0 +1,171 @@
+import java.util.*;
+
+public class SchedulingSimulator {
+
+// Inner Process structure
+static class Process {
+String id;
+int arrivalTime, burstTime, remainingTime, priority;
+int completionTime, startTime = -1;
+
+Process(String id, int at, int bt, int pr) {
+this.id = id;
+this.arrivalTime = at;
+this.burstTime = bt;
+this.remainingTime = bt;
+this.priority = pr;
+}
+}
+
+// ===== MAIN METHOD =====
+public static void main(String[] args) {
+Scanner sc = new Scanner(System.in);
+List<Process> processes = new ArrayList<>();
+
+System.out.print("Enter number of processes: ");
+int n = sc.nextInt();
+
+for (int i = 0; i < n; i++) {
+System.out.println("\nEnter details for P" + (i + 1));
+System.out.print("Arrival time: ");
+int at = sc.nextInt();
+System.out.print("Burst time: ");
+int bt = sc.nextInt();
+System.out.print("Priority (lower = higher priority): ");
+int pr = sc.nextInt();
+processes.add(new Process("P" + (i + 1), at, bt, pr));
+}
+
+System.out.print("\nEnter time quantum (for RR): ");
+int quantum = sc.nextInt();
+sc.close();
+
+// Run both scheduling algorithms
+priorityWithRR(processes, quantum);
+fcfs(processes);
+}
+
+// ===== PRIORITY WITH ROUND ROBIN =====
+public static void priorityWithRR(List<Process> original, int quantum) {
+List<Process> processes = new ArrayList<>();
+for (Process p : original)
+processes.add(new Process(p.id, p.arrivalTime, p.burstTime, p.priority));
+
+int time = 0;
+List<Process> completed = new ArrayList<>();
+
+System.out.println("\n===== Priority Queue with Round Robin =====");
+System.out.println("Time\tProcess");
+
+Queue<Process> readyQueue = new LinkedList<>();
+
+while (completed.size() < processes.size()) {
+// Add newly arrived processes
+for (Process p : processes)
+if (p.arrivalTime == time && !readyQueue.contains(p) && p.remainingTime > 0)
+readyQueue.add(p);
+
+// Find the highest priority currently in ready queue
+int highestPriority = Integer.MAX_VALUE;
+for (Process p : readyQueue)
+if (p.priority < highestPriority)
+highestPriority = p.priority;
+
+// Filter those with highest priority
+List<Process> samePriorityList = new ArrayList<>();
+for (Process p : readyQueue)
+if (p.priority == highestPriority)
+samePriorityList.add(p);
+
+if (!samePriorityList.isEmpty()) {
+Process current = samePriorityList.get(0); // Round Robin order
+if (current.startTime == -1)
+current.startTime = time;
+
+int execTime = Math.min(current.remainingTime, quantum);
+int start = time;
+
+for (int i = 0; i < execTime; i++) {
+time++;
+current.remainingTime--;
+
+// Add new arrivals during execution
+for (Process p : processes)
+if (p.arrivalTime == time && !readyQueue.contains(p) && p.remainingTime > 0)
+readyQueue.add(p);
+
+// Check preemption by higher-priority process
+int minPriority = current.priority;
+for (Process p : readyQueue)
+if (p != current && p.remainingTime > 0 && p.priority < minPriority)
+minPriority = p.priority;
+
+if (minPriority < current.priority)
+break; // preempt
+}
+
+int end = time;
+System.out.println(start + "-" + end + " " + current.id);
+
+if (current.remainingTime == 0) {
+current.completionTime = end;
+completed.add(current);
+readyQueue.remove(current);
+} else {
+// Move to end of queue (RR rotation)
+readyQueue.remove(current);
+readyQueue.add(current);
+}
+} else {
+time++; // idle
+}
+}
+
+displayMetrics(completed);
+}
+
+// ===== FIRST-COME FIRST-SERVED =====
+public static void fcfs(List<Process> original) {
+List<Process> processes = new ArrayList<>();
+for (Process p : original)
+processes.add(new Process(p.id, p.arrivalTime, p.burstTime, p.priority));
+
+processes.sort(Comparator.comparingInt(p -> p.arrivalTime));
+
+System.out.println("\n===== First-Come First-Served (FCFS) =====");
+System.out.println("Time\tProcess");
+
+int time = 0;
+List<Process> completed = new ArrayList<>();
+
+for (Process p : processes) {
+if (time < p.arrivalTime)
+time = p.arrivalTime;
+
+int start = time;
+int end = time + p.burstTime;
+time = end;
+p.completionTime = end;
+completed.add(p);
+System.out.println(start + "-" + end + " " + p.id);
+}
+
+displayMetrics(completed);
+}
+
+// ===== METRICS =====
+public static void displayMetrics(List<Process> completed) {
+double totalTAT = 0, totalWT = 0;
+
+for (Process p : completed) {
+int tat = p.completionTime - p.arrivalTime;
+int wt = tat - p.burstTime;
+totalTAT += tat;
+totalWT += wt;
+}
+
+System.out.printf("Average Turnaround Time: %.2f%n", totalTAT / completed.size());
+System.out.printf("Average Waiting Time: %.2f%n", totalWT / completed.size());
+System.out.println("CPU Utilization: 100%");
+}
+}
