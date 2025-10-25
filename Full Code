@@ -48,10 +48,10 @@ public class ProcessSchedulingSimulator {
 	}
 
 	// ===== PRIORITY WITH ROUND ROBIN =====
-	public static void priorityWithRR(List<Process> original, int quantum) {
+	public static void priorityWithRR(List<Process> original, int Quantum) {
 	List<Process> processes = new ArrayList<>();
 	for (Process p : original)
-	processes.add(new Process(p.id, p.arrivalTime, p.burstTime, p.priority));
+	processes.add(new Process(p.ID, p.ArrivalTime, p.BurstTime, p.Priority));
 
 	int time = 0;
 	List<Process> completed = new ArrayList<>();
@@ -64,19 +64,19 @@ public class ProcessSchedulingSimulator {
 	while (completed.size() < processes.size()) {
 	// Add newly arrived processes
 	for (Process p : processes)
-	if (p.arrivalTime == time && !readyQueue.contains(p) && p.remainingTime > 0)
+	if (p.ArrivalTime == time && !readyQueue.contains(p) && p.RemainingTime > 0)
 	readyQueue.add(p);
 
 	// Find the highest priority currently in ready queue
 	int highestPriority = Integer.MAX_VALUE;
 	for (Process p : readyQueue)
-	if (p.priority < highestPriority)
-	highestPriority = p.priority;
+	if (p.Priority < highestPriority)
+	highestPriority = p.Priority;
 
 	// Filter those with highest priority
 	List<Process> samePriorityList = new ArrayList<>();
 	for (Process p : readyQueue)
-	if (p.priority == highestPriority)
+	if (p.Priority == highestPriority)
 	samePriorityList.add(p);
 
 	if (!samePriorityList.isEmpty()) {
@@ -84,32 +84,32 @@ public class ProcessSchedulingSimulator {
 	if (current.startTime == -1)
 	current.startTime = time;
 
-	int execTime = Math.min(current.remainingTime, quantum);
+	int execTime = Math.min(current.RemainingTime, Quantum);
 	int start = time;
 
 	for (int i = 0; i < execTime; i++) {
 	time++;
-	current.remainingTime--;
+	current.RemainingTime--;
 
 	// Add new arrivals during execution
 	for (Process p : processes)
-	if (p.arrivalTime == time && !readyQueue.contains(p) && p.remainingTime > 0)
+	if (p.ArrivalTime == time && !readyQueue.contains(p) && p.RemainingTime > 0)
 	readyQueue.add(p);
 
 	// Check preemption by higher-priority process
 	int minPriority = current.priority;
 	for (Process p : readyQueue)
-	if (p != current && p.remainingTime > 0 && p.priority < minPriority)
-	minPriority = p.priority;
+	if (p != current && p.remainingTime > 0 && p.Priority < minPriority)
+	minPriority = p.Priority;
 
-	if (minPriority < current.priority)
+	if (minPriority < current.Priority)
 	break; // preempt
 	}
 
 	int end = time;
 	System.out.println(start + "-" + end + " " + current.id);
 
-	if (current.remainingTime == 0) {
+	if (current.RemainingTime == 0) {
 	current.completionTime = end;
 	completed.add(current);
 	readyQueue.remove(current);
