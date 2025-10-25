@@ -17,13 +17,17 @@ public class PreemptivePriorityRR {
 
 	Queue<Process> readyQueue = new LinkedList<>();
 
-// I created a queue to process the processes according to its priority
+// As there is processes didn't completed yet contunue
 
 	while (completed.size() < processes.size()) {
+
 	// Add newly arrived processes
+
 	for (Process p : processes)
 	if (p.arrivalTime == time && !readyQueue.contains(p) && p.remainingTime > 0)
 	readyQueue.add(p);
+
+// To achieve the smallest priority which is the highest
 
 	// Find the highest priority currently in ready queue
 	int highestPriority = Integer.MAX_VALUE;
@@ -31,7 +35,8 @@ public class PreemptivePriorityRR {
 	if (p.priority < highestPriority)
 	highestPriority = p.priority;
 
-	// Filter those with highest priority
+	// Filter those with the same highest priority
+
 	List<Process> samePriorityList = new ArrayList<>();
 	for (Process p : readyQueue)
 	if (p.priority == highestPriority)
@@ -48,7 +53,7 @@ public class PreemptivePriorityRR {
 	for (int i = 0; i < execTime; i++) {
 	time++;
 	current.remainingTime--;
-
+// Leen
 
 
 
