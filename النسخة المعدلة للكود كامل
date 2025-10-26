@@ -1,26 +1,23 @@
-package ProcessSchedulingSimulator;
 import java.util.*;
 
-public class test {
-	
+public class ProcessSchedulingSimulator {
+
 	// Inner Process structure
-		static class Process {
+	static class Process {
 		String ID;
-		int Priority, ArrivalTime, BurstTime, RemainingTime , CompletionTime ;
+		int Priority, ArrivalTime, BurstTime, RemainingTime, CompletionTime;
 		int StartTime = -1;
 
 		Process(String ID, int ArrivalTime, int BurstTime, int Priority) {
-		this.ID = ID;
-		this.Priority = Priority;
-		this.ArrivalTime = ArrivalTime;
-		this.BurstTime = BurstTime;
-		this.RemainingTime =BurstTime;
+			this.ID = ID;
+			this.Priority = Priority;
+			this.ArrivalTime = ArrivalTime;
+			this.BurstTime = BurstTime;
+			this.RemainingTime = BurstTime;
 		}
-		}
-
+	}
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 		Scanner input = new Scanner(System.in);
 		List<Process> Processes = new ArrayList<>();
 
@@ -28,14 +25,14 @@ public class test {
 		int NumOfProcesses = input.nextInt();
 
 		for (int i = 0; i < NumOfProcesses; i++) {
-		System.out.println("\n Enter Priority, Arrival time and Burst time for P" + (i + 1));
-		System.out.print("Priority (lower = higher priority): ");
-		int Priority = input.nextInt();
-		System.out.print("Arrival time: ");
-		int ArrivalTime = input.nextInt();
-		System.out.print("Burst time: ");
-		int BurstTime = input.nextInt();
-		Processes.add(new Process("P" + (i + 1), ArrivalTime, BurstTime, Priority));
+			System.out.println("\n Enter Priority, Arrival time and Burst time for P" + (i + 1));
+			System.out.print("Priority (lower = higher priority): ");
+			int Priority = input.nextInt();
+			System.out.print("Arrival time: ");
+			int ArrivalTime = input.nextInt();
+			System.out.print("Burst time: ");
+			int BurstTime = input.nextInt();
+			Processes.add(new Process("P" + (i + 1), ArrivalTime, BurstTime, Priority));
 		}
 
 		System.out.print("\n Enter The time quantum for Round Robin: ");
@@ -47,91 +44,137 @@ public class test {
 		FCFS(Processes);
 	}
 
+	/**
+	 * =========================================================================
+	 * هذا هو الكود الذي يطابق المثال في طريقة العرض 100%
+	 * =========================================================================
+	 */
 	public static void priorityWithRR(List<Process> original, int Quantum) {
 		List<Process> processes = new ArrayList<>();
 		for (Process p : original)
-		processes.add(new Process(p.ID, p.ArrivalTime, p.BurstTime, p.Priority));
+			processes.add(new Process(p.ID, p.ArrivalTime, p.BurstTime, p.Priority));
 
-		int time = 0;
 		List<Process> completed = new ArrayList<>();
+		Queue<Process> readyQueue = new LinkedList<>();
 
+		int time = 0; // الساعة الحالية
+		int quantumCounter = Quantum; // عداد الفترة الزمنية
+		Process current = null; // العملية التي تعمل حالياً
+		Process lastProcess = null; // لتتبع آخر عملية شغالة
+		
 		System.out.println("\n===== Priority Queue with Round Robin =====");
 		System.out.println("Time\tProcess");
 
-		Queue<Process> readyQueue = new LinkedList<>();
+		int ganttStartTime = 0; // لتسجيل بداية المخطط
 
 		while (completed.size() < processes.size()) {
-		// Add newly arrived processes
-		for (Process p : processes)
-		if (p.ArrivalTime == time && !readyQueue.contains(p) && p.RemainingTime > 0)
-		readyQueue.add(p);
 
-		// Find the highest priority currently in ready queue
-		int highestPriority = Integer.MAX_VALUE;
-		for (Process p : readyQueue)
-		if (p.Priority < highestPriority)
-		highestPriority = p.Priority;
+			// 1. إضافة العمليات الجديدة التي وصلت الآن
+			for (Process p : processes) {
+				if (p.ArrivalTime == time && p.RemainingTime > 0) {
+					readyQueue.add(p);
+				}
+			}
 
-		// Filter those with highest priority
-		List<Process> samePriorityList = new ArrayList<>();
-		for (Process p : readyQueue)
-		if (p.Priority == highestPriority)
-		samePriorityList.add(p);
+			// 2. إيجاد أعلى أولوية (أقل رقم) في الطابور
+			int highestPriority = Integer.MAX_VALUE;
+			for (Process p : readyQueue) {
+				if (p.Priority < highestPriority) {
+					highestPriority = p.Priority;
+				}
+			}
+			
+			// 3. فلترة العمليات التي لها نفس الأولوية العليا
+			// (هذه الخطوة غير ضرورية في هذا المنطق الجديد، لكنها لا تضر)
+			
+			// 4. اختيار العملية
+			if (readyQueue.isEmpty()) {
+				// لا توجد عمليات جاهزة، المعالج خامل
+				time++;
+				quantumCounter = Quantum; // أعد ضبط العداد
+				continue;
+			}
+			
+			// --- يوجد عملية جاهزة ---
+			// اختر العملية ذات الأولوية الأعلى
+			Process potentialCurrent = null;
+			for (Process p : readyQueue) {
+				if (p.Priority == highestPriority) {
+					potentialCurrent = p;
+					break;
+				}
+			}
+			current = potentialCurrent;
+			
 
-		if (!samePriorityList.isEmpty()) {
-		Process current = samePriorityList.get(0); // Round Robin order
-		if (current.StartTime == -1)
-		current.StartTime = time;
+			// 5. التحقق من المقاطعة (Preemption) أو تدوير RR
+			if (current != lastProcess) {
+				// عملية جديدة بدأت (إما بسبب أولوية أو تدوير RR)
+				if(lastProcess != null) {
+					System.out.printf("%-8s %s%n", ganttStartTime + "-" + time, lastProcess.ID);
+				}
+				ganttStartTime = time;
+				quantumCounter = Quantum; // ابدأ عداد جديد
+			} else if (quantumCounter == 0) {
+				// انتهى الـ Quantum لنفس العملية
 
-		int execTime = Math.min(current.RemainingTime, Quantum);
-		int start = time;
+				// ******** هذا هو التعديل الوحيد والمهم ********
+				// المنطق الجديد: طبق الـ RR ما دام هناك أي عملية أخرى في الطابور (حتى لو كانت أولويتها أقل)
+				// لا تطبق الـ RR فقط إذا كانت هذه العملية هي الوحيدة المتبقية في الطابور
+				if (readyQueue.size() > 1) { 
+				// **********************************************
+				
+					System.out.printf("%-8s %s%n", ganttStartTime + "-" + time, current.ID);
+					readyQueue.remove(current);
+					readyQueue.add(current); // أرسلها لنهاية الطابور
+					
+					// اختر العملية الجديدة التي أصبحت في المقدمة
+					Process newCurrent = null;
+					for (Process p : readyQueue) {
+						if (p.Priority == highestPriority) {
+							newCurrent = p;
+							break;
+						}
+					}
+					current = newCurrent;
+									
+					ganttStartTime = time;
+					quantumCounter = Quantum; // أعد ضبط العداد للعملية الجديدة
+				} else {
+					// لا يوجد تنافس (هذه آخر عملية في الطابور، مثل P3)، استمر في العمل
+					quantumCounter = Quantum; // (لن يؤثر لكنه يعيد الضبط)
+				}
+			}
 
-		for (int i = 0; i < execTime; i++) {
-		time++;
-		current.RemainingTime--;
+			// 6. تشغيل ثانية واحدة
+			if (current.StartTime == -1) current.StartTime = time;
+			
+			time++;
+			current.RemainingTime--;
+			quantumCounter--;
+			lastProcess = current; // تذكر من كان يعمل
 
-		// Add new arrivals during execution
-		for (Process p : processes)
-		if (p.ArrivalTime == time && !readyQueue.contains(p) && p.RemainingTime > 0)
-		readyQueue.add(p);
-
-		// Check preemption by higher-priority process
-		int minPriority = current.Priority;
-		for (Process p : readyQueue)
-		if (p != current && p.RemainingTime > 0 && p.Priority < minPriority)
-		minPriority = p.Priority;
-
-		if (minPriority < current.Priority)
-		break; // preempt
-		}
-
-		int end = time;
-		System.out.printf("%-8s %s%n", start + "-" + end, current.ID);
-
-
-		if (current.RemainingTime == 0) {
-		current.CompletionTime = end;
-		completed.add(current);
-		readyQueue.remove(current);
-		} else {
-		// Move to end of queue (RR rotation)
-		readyQueue.remove(current);
-		readyQueue.add(current);
-		}
-		} else {
-		time++; // idle
-		}
+			// 7. التحقق إذا انتهت العملية
+			if (current.RemainingTime == 0) {
+				System.out.printf("%-8s %s%n", ganttStartTime + "-" + time, current.ID); // اطبع المقطع الأخير
+				current.CompletionTime = time;
+				completed.add(current);
+				readyQueue.remove(current);
+				lastProcess = null; // لا يوجد أحد يعمل الآن
+				quantumCounter = Quantum; // أعد الضبط
+			}
 		}
 
 		displayMetrics(completed);
-		}
+	}
+
 	// ===== FIRST-COME FIRST-SERVED =====
-		public static void FCFS(List<Process> OriginalProcesses) {
+	public static void FCFS(List<Process> OriginalProcesses) {
 		List<Process> processes = new ArrayList<>();
 		List<Process> completed = new ArrayList<>();
 
 		for (Process p : OriginalProcesses)
-		processes.add(new Process(p.ID, p.ArrivalTime, p.BurstTime, p.Priority));
+			processes.add(new Process(p.ID, p.ArrivalTime, p.BurstTime, p.Priority));
 
 		processes.sort(Comparator.comparingInt(p -> p.ArrivalTime));
 
@@ -141,35 +184,42 @@ public class test {
 		int Time = 0;
 
 		for (Process p : processes) {
-		if (Time < p.ArrivalTime)
-		Time = p.ArrivalTime;
+			if (Time < p.ArrivalTime)
+				Time = p.ArrivalTime;
 
-		int StartTime = Time;
-		int FinishTime = Time + p.BurstTime;
-		Time = FinishTime;
-		p.CompletionTime = FinishTime;
-		completed.add(p);
-		System.out.printf("%-8s %s%n", StartTime + "-" + FinishTime, p.ID);
-
+			int StartTime = Time;
+			int FinishTime = Time + p.BurstTime;
+			Time = FinishTime;
+			p.CompletionTime = FinishTime;
+			completed.add(p);
+			System.out.printf("%-8s %s%n", StartTime + "-" + FinishTime, p.ID);
 		}
 
 		displayMetrics(completed);
-		}
+	}
 		
-		// ===== METRICS =====
-		public static void displayMetrics(List<Process> completed) {
-		double totalTAT = 0, totalWT = 0;
+	// ===== METRICS =====
+	public static void displayMetrics(List<Process> completed) {
+		double totalTAT = 0, totalWT = 0, totalBurst = 0;
+		int maxCompletionTime = 0; // هو وقت انتهاء المحاكاة
 
 		for (Process p : completed) {
-		int tat = p.CompletionTime - p.ArrivalTime;
-		int wt = tat - p.BurstTime;
-		totalTAT += tat;
-		totalWT += wt;
+			int tat = p.CompletionTime - p.ArrivalTime;
+			int wt = tat - p.BurstTime;
+			totalTAT += tat;
+			totalWT += wt;
+			totalBurst += p.BurstTime; // نحتاج مجموع أوقات التنفيذ
+
+			if (p.CompletionTime > maxCompletionTime) {
+				maxCompletionTime = p.CompletionTime;
+			}
 		}
+        
+		// حساب CPU Utilization
+		double cpuUtilization = (totalBurst / maxCompletionTime) * 100.0;
 
 		System.out.printf("Average Turnaround Time: %.2f%n", totalTAT / completed.size());
 		System.out.printf("Average Waiting Time: %.2f%n", totalWT / completed.size());
-		System.out.println("CPU Utilization: ");
-		}
+		System.out.printf("CPU Utilization: %.2f%%%n", cpuUtilization); 
 	}
-		
+}
